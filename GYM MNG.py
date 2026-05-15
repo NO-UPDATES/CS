@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 import mysql.connector
 from datetime import datetime
+import random
 
 # Global variables used by beginner-level functions
 con = None
@@ -17,13 +18,13 @@ def db_connect():
         con = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="root",
+            password="mysql.2010",
             database="gym"
         )
         # Create cursor object to run SQL statements
         cur = con.cursor()
-    except Exception as e:
-        messagebox.showerror("Database Error", "Database Connection Error\n" + str(e))
+    except Exception:
+        messagebox.showerror("Database Error", "Database Connection Error")
 
 
 def load_trainers(lb):
@@ -86,9 +87,9 @@ def register_window():
     e2 = Entry(f)
     e2.grid(row=1, column=1, padx=10, pady=6)
 
-    # Create 5 digit regd number from current microsecond and keep checking uniqueness
+    # Create random 5 digit registration number
     while True:
-        r = str(datetime.now().microsecond % 90000 + 10000)
+        r = str(random.randint(10000, 99999))
         cur.execute("select regdno from members where regdno=%s", (r,))
         x = cur.fetchone()
         if x is None:
@@ -158,7 +159,7 @@ def register_window():
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-    Button(rw, text="Submit", bg="green", fg="white", width=15, command=submit_register).pack(pady=15)
+    Button(rw, text="Register", bg="green", fg="white", width=15, command=submit_register).pack(pady=15)
 
 
 def customer_window(nm, reg):
