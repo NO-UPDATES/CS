@@ -82,9 +82,19 @@ def register_window():
     e1 = Entry(f)
     e1.grid(row=0, column=1, padx=10, pady=6)
 
-    Label(f, text="Regd No", bg="black", fg="white").grid(row=1, column=0, padx=10, pady=6)
+    Label(f, text="Regd No (Auto)", bg="black", fg="white").grid(row=1, column=0, padx=10, pady=6)
     e2 = Entry(f)
     e2.grid(row=1, column=1, padx=10, pady=6)
+
+    # Create 5 digit regd number from current microsecond and keep checking uniqueness
+    while True:
+        r = str(datetime.now().microsecond % 90000 + 10000)
+        cur.execute("select regdno from members where regdno=%s", (r,))
+        x = cur.fetchone()
+        if x is None:
+            break
+    e2.insert(0, r)
+    e2.config(state="readonly")
 
     Label(f, text="Age", bg="black", fg="white").grid(row=2, column=0, padx=10, pady=6)
     e3 = Entry(f)
@@ -280,34 +290,28 @@ def admin_window():
     Button(aw, text="Update Item Quantity", bg="green", fg="white", command=update_item).pack(pady=5)
 
 
-def admin_login():
-    u = e_name.get().strip()
-    p = e_pass.get().strip()
+def admin_login(u, p):
     if u == "" or p == "":
-        messagebox.showerror("Error", "Empty Field Warning")
-        return
+        return False
     cur.execute("select * from admin where username=%s and password=%s", (u, p))
     d = cur.fetchone()
     if d is None:
-        messagebox.showerror("Error", "Invalid Login")
-    else:
-        messagebox.showinfo("Success", "Login Successful")
-        admin_window()
+        return False
+    messagebox.showinfo("Success", "Login Successful")
+    admin_window()
+    return True
 
 
-def customer_login():
-    n = e_name.get().strip()
-    r = e_reg.get().strip()
+def customer_login(n, r):
     if n == "" or r == "":
-        messagebox.showerror("Error", "Empty Field Warning")
-        return
+        return False
     cur.execute("select * from members where name=%s and regdno=%s", (n, r))
     d = cur.fetchone()
     if d is None:
-        messagebox.showerror("Error", "Invalid Login")
-    else:
-        messagebox.showinfo("Success", "Login Successful")
-        customer_window(n, r)
+        return False
+    messagebox.showinfo("Success", "Login Successful")
+    customer_window(n, r)
+    return True
 
 
 def app_exit():
@@ -341,9 +345,28 @@ Label(f_main, text="Password (Admin)", bg="black", fg="white").grid(row=2, colum
 e_pass = Entry(f_main, show="*")
 e_pass.grid(row=2, column=1, padx=10, pady=8)
 
-Button(root, text="Admin Login", bg="green", fg="white", width=20, command=admin_login).pack(pady=7)
-Button(root, text="Customer Login", bg="green", fg="white", width=20, command=customer_login).pack(pady=7)
+def submit_login():
+    n = e_name.get().strip()
+    r = e_reg.get().strip()
+    p = e_pass.get().strip()
+
+    # If password is given, try admin login using Name + Password
+    if p != "":
+        ok = admin_login(n, p)
+        if not ok:
+            messagebox.showerror("Error", "Invalid Login")
+        return
+
+    # If no password, try customer login using Name + Regd No
+    ok = customer_login(n, r)
+    if not ok:
+        if n == "" or r == "":
+            messagebox.showerror("Error", "Empty Field Warning")
+        else:
+            messagebox.showerror("Error", "Invalid Login")
+
+
+Button(root, text="Submit", bg="green", fg="white", width=20, command=submit_login).pack(pady=7)
 Button(root, text="Register", bg="green", fg="white", width=20, command=register_window).pack(pady=7)
-Button(root, text="Exit", bg="green", fg="white", width=20, command=app_exit).pack(pady=7)
 
 root.mainloop()
