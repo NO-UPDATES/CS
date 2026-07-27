@@ -69,6 +69,6 @@ INSERT INTO membership_plans (membership, amount) VALUES
 ('Quarterly', 3200.00),
 ('Half Yearly', 6000.00),
 ('Yearly', 11000.00),
-('Student', 900.00);
+('Weekly', 500.00);
 
 COMMIT;

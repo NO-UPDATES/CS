@@ -14,6 +14,9 @@ conn = mysql.connector.connect(
 )
 cur = conn.cursor()
 
+membership_fees = {"Monthly": 1200, "Quarterly": 3200, "Half Yearly": 6000, "Yearly": 11000, "Weekly": 500}
+membership_names = list(membership_fees.keys())
+
 def init_db():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
@@ -115,6 +118,8 @@ def validate_member_values(name, age, gender, membership, phone):
         return "Please select a valid gender."
     if membership.strip() == "":
         return "Membership is required."
+    if membership.strip() not in membership_names:
+        return "Please select a valid membership."
     return check_phone(phone)
 
 def validate_trainer_values(name, specialization, phone, salary):
@@ -265,11 +270,11 @@ def load_main_window():
     notebook.bind("<<NotebookTabChanged>>", lambda e: refresh_dashboard() if notebook.index("current") == 0 else None)
 
     # ------------------ 2. MEMBERS MODULE ------------------
-    m_id, m_name, m_age, m_gender, m_ship, m_phone = tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(value="Male"), tk.StringVar(), tk.StringVar()
+    m_id, m_name, m_age, m_gender, m_ship, m_phone = tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(value="Male"), tk.StringVar(value="Monthly"), tk.StringVar()
     m_selected = tk.StringVar()
     m_frame = tk.Frame(tab_members, bg="#1e1e1e")
     m_frame.pack(pady=10)
-    fields = [("Name", m_name, None), ("Age", m_age, None), ("Gender", m_gender, ["Male", "Female", "Other"]), ("Membership", m_ship, None), ("Phone", m_phone, None)]
+    fields = [("Name", m_name, None), ("Age", m_age, None), ("Gender", m_gender, ["Male", "Female", "Other"]), ("Membership", m_ship, membership_names), ("Phone", m_phone, None)]
     for idx, (label, var, vals) in enumerate(fields):
         tk.Label(m_frame, text=label, fg="white", bg="#1e1e1e", font=("Arial", 10, "bold")).grid(row=idx//3, column=(idx%3)*2, padx=5, pady=5)
         if vals:
@@ -281,19 +286,13 @@ def load_main_window():
     btn_f.pack(pady=10)
     m_table_frame = tk.Frame(tab_members, bg="white")
     m_table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-    m_canvas = tk.Canvas(m_table_frame, bg="white", highlightthickness=0)
-    m_scroll = tk.Scrollbar(m_table_frame, orient="vertical", command=m_canvas.yview)
-    m_canvas.configure(yscrollcommand=m_scroll.set)
-    m_scroll.pack(side="right", fill="y")
-    m_canvas.pack(side="left", fill="both", expand=True)
-    m_rows = tk.Frame(m_canvas, bg="white")
-    m_canvas.create_window((0, 0), window=m_rows, anchor="nw")
-    m_rows.bind("<Configure>", lambda e: m_canvas.configure(scrollregion=m_canvas.bbox("all")))
+    m_rows = tk.Frame(m_table_frame, bg="white")
+    m_rows.pack(anchor="nw", fill="x")
 
     def clear_m_fields():
         m_id.set(""); m_selected.set("")
         for var in [m_name, m_age, m_ship, m_phone]: var.set("")
-        m_gender.set("Male")
+        m_gender.set("Male"); m_ship.set("Monthly")
         fetch_members()
 
     def select_member_row(row):
@@ -363,12 +362,8 @@ def load_main_window():
     t_btn_f.pack(pady=10)
     t_table_frame = tk.Frame(tab_trainers, bg="white")
     t_table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-    t_canvas = tk.Canvas(t_table_frame, bg="white", highlightthickness=0)
-    t_scroll = tk.Scrollbar(t_table_frame, orient="vertical", command=t_canvas.yview)
-    t_canvas.configure(yscrollcommand=t_scroll.set)
-    t_scroll.pack(side="right", fill="y"); t_canvas.pack(side="left", fill="both", expand=True)
-    t_rows = tk.Frame(t_canvas, bg="white"); t_canvas.create_window((0, 0), window=t_rows, anchor="nw")
-    t_rows.bind("<Configure>", lambda e: t_canvas.configure(scrollregion=t_canvas.bbox("all")))
+    t_rows = tk.Frame(t_table_frame, bg="white")
+    t_rows.pack(anchor="nw", fill="x")
 
     def clear_t_fields():
         t_selected.set("")
@@ -421,8 +416,7 @@ def load_main_window():
     tk.Label(att_f, text="Status", fg="white", bg="#1e1e1e", font=("Arial", 10, "bold")).grid(row=0, column=2, padx=5)
     ttk.Combobox(att_f, textvariable=att_status, values=["Present", "Absent"], width=12, state="readonly").grid(row=0, column=3, padx=5)
     att_table_frame = tk.Frame(tab_attendance, bg="white"); att_table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-    att_canvas = tk.Canvas(att_table_frame, bg="white", highlightthickness=0); att_scroll = tk.Scrollbar(att_table_frame, orient="vertical", command=att_canvas.yview); att_canvas.configure(yscrollcommand=att_scroll.set); att_scroll.pack(side="right", fill="y"); att_canvas.pack(side="left", fill="both", expand=True)
-    att_rows = tk.Frame(att_canvas, bg="white"); att_canvas.create_window((0, 0), window=att_rows, anchor="nw"); att_rows.bind("<Configure>", lambda e: att_canvas.configure(scrollregion=att_canvas.bbox("all")))
+    att_rows = tk.Frame(att_table_frame, bg="white"); att_rows.pack(anchor="nw", fill="x")
     def fetch_attendance():
         for widget in att_rows.winfo_children(): widget.destroy()
         heads = ["Record ID", "Member ID", "Date", "Status"]; widths = [20, 20, 28, 20]
@@ -446,7 +440,7 @@ def load_main_window():
     fetch_attendance()
 
     # ------------------ 5. PAYMENTS MODULE ------------------
-    p_m_id, p_amt, p_method = tk.StringVar(), tk.StringVar(), tk.StringVar(value="Cash")
+    p_m_id, p_amt, p_method, p_ship = tk.StringVar(), tk.StringVar(value=str(membership_fees["Monthly"])), tk.StringVar(value="Cash"), tk.StringVar(value="Monthly")
     p_f = tk.Frame(tab_payments, bg="#1e1e1e"); p_f.pack(pady=10)
     tk.Label(p_f, text="Member ID", fg="white", bg="#1e1e1e", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5)
     tk.Entry(p_f, textvariable=p_m_id, width=15).grid(row=0, column=1, padx=5)
@@ -454,9 +448,13 @@ def load_main_window():
     tk.Entry(p_f, textvariable=p_amt, width=15).grid(row=0, column=3, padx=5)
     tk.Label(p_f, text="Method", fg="white", bg="#1e1e1e", font=("Arial", 10, "bold")).grid(row=0, column=4, padx=5)
     ttk.Combobox(p_f, textvariable=p_method, values=["Cash", "Credit Card", "Debit Card", "UPI"], width=12, state="readonly").grid(row=0, column=5, padx=5)
+    tk.Label(p_f, text="Membership", fg="white", bg="#1e1e1e", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=5, pady=5)
+    p_combo = ttk.Combobox(p_f, textvariable=p_ship, values=membership_names, width=12, state="readonly")
+    p_combo.grid(row=1, column=1, padx=5, pady=5)
+    def set_plan_amount(event=None): p_amt.set(str(membership_fees[p_ship.get()]))
+    p_combo.bind("<<ComboboxSelected>>", set_plan_amount)
     p_table_frame = tk.Frame(tab_payments, bg="white"); p_table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-    p_canvas = tk.Canvas(p_table_frame, bg="white", highlightthickness=0); p_scroll = tk.Scrollbar(p_table_frame, orient="vertical", command=p_canvas.yview); p_canvas.configure(yscrollcommand=p_scroll.set); p_scroll.pack(side="right", fill="y"); p_canvas.pack(side="left", fill="both", expand=True)
-    p_rows = tk.Frame(p_canvas, bg="white"); p_canvas.create_window((0, 0), window=p_rows, anchor="nw"); p_rows.bind("<Configure>", lambda e: p_canvas.configure(scrollregion=p_canvas.bbox("all")))
+    p_rows = tk.Frame(p_table_frame, bg="white"); p_rows.pack(anchor="nw", fill="x")
     def fetch_payments():
         for widget in p_rows.winfo_children(): widget.destroy()
         heads = ["Payment ID", "Member ID", "Amount", "Date", "Method"]; widths = [18, 18, 18, 24, 20]
@@ -472,10 +470,11 @@ def load_main_window():
         if not mid.isdigit(): messagebox.showerror("Error", "Member ID must be an integer."); return
         msg = check_positive_number(amount, "Amount")
         if msg: messagebox.showerror("Error", msg); return
+        if p_ship.get() not in membership_names: messagebox.showerror("Error", "Please select a valid membership."); return
         if method not in ["Cash", "Credit Card", "Debit Card", "UPI"]: messagebox.showerror("Error", "Please select a payment method."); return
         try:
             if not check_member_exists(mid): messagebox.showerror("Error", "Member ID does not exist."); return
-            cur.execute("INSERT INTO payments (member_id, amount, payment_date, method) VALUES (%s, %s, CURDATE(), %s)", (mid, float(amount), method)); conn.commit(); fetch_payments(); p_m_id.set(""); p_amt.set(""); p_method.set("Cash"); messagebox.showinfo("Success", "Payment Recorded Successfully")
+            cur.execute("INSERT INTO payments (member_id, amount, payment_date, method) VALUES (%s, %s, CURDATE(), %s)", (mid, float(amount), method)); conn.commit(); fetch_payments(); p_m_id.set(""); p_ship.set("Monthly"); p_amt.set(str(membership_fees["Monthly"])); p_method.set("Cash"); messagebox.showinfo("Success", "Payment Recorded Successfully")
         except Exception as e: messagebox.showerror("Error", "Payment could not be recorded.\n" + str(e))
     tk.Button(p_f, text="Record Payment", bg="#28a745", fg="white", command=record_payment).grid(row=0, column=6, padx=10)
     fetch_payments(); refresh_dashboard(); root.mainloop()
