@@ -21,8 +21,15 @@ CREATE TABLE members (
     name VARCHAR(100) NOT NULL,
     age INT,
     gender VARCHAR(20),
-    membership VARCHAR(50),
+    membership VARCHAR(50) DEFAULT 'Monthly',
     phone VARCHAR(20)
+) ENGINE=InnoDB;
+
+-- MEMBERSHIP PLANS TABLE
+CREATE TABLE membership_plans (
+    plan_id INT AUTO_INCREMENT PRIMARY KEY,
+    membership VARCHAR(50) UNIQUE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL
 ) ENGINE=InnoDB;
 
 -- TRAINERS TABLE
@@ -55,5 +62,13 @@ CREATE TABLE payments (
 
 -- DEFAULT ADMIN ACCOUNT
 INSERT INTO users (username, password) VALUES ('admin', 'admin123');
+
+-- DEFAULT MEMBERSHIP PLANS
+INSERT INTO membership_plans (membership, amount) VALUES
+('Monthly', 1200.00),
+('Quarterly', 3200.00),
+('Half Yearly', 6000.00),
+('Yearly', 11000.00),
+('Student', 900.00);
 
 COMMIT;
