@@ -1,71 +1,74 @@
-CREATE DATABASE IF NOT EXISTS gym;
+-- ==========================================
+-- GYM MANAGEMENT SYSTEM DATABASE SCRIPT
+-- ==========================================
+
+DROP DATABASE IF EXISTS gym;
+CREATE DATABASE gym;
 USE gym;
 
-CREATE TABLE IF NOT EXISTS admin (
-    username VARCHAR(30),
-    password VARCHAR(30)
-);
+START TRANSACTION;
 
-CREATE TABLE IF NOT EXISTS members (
-    regdno VARCHAR(20) PRIMARY KEY,
-    name VARCHAR(50),
+-- USERS TABLE
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(50) NOT NULL
+) ENGINE=InnoDB;
+
+-- MEMBERS TABLE
+CREATE TABLE members (
+    regdno INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
     age INT,
-    gender VARCHAR(10),
-    phone VARCHAR(15),
-    membership VARCHAR(100)
-);
+    gender VARCHAR(20),
+    membership VARCHAR(50) DEFAULT 'Monthly',
+    phone VARCHAR(20)
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS items (
-    itemid INT PRIMARY KEY AUTO_INCREMENT,
-    itemname VARCHAR(100),
-    quantity INT
-);
+-- MEMBERSHIP PLANS TABLE
+CREATE TABLE membership_plans (
+    plan_id INT AUTO_INCREMENT PRIMARY KEY,
+    membership VARCHAR(50) UNIQUE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS trainers (
-    trainerid INT PRIMARY KEY AUTO_INCREMENT,
-    trainername VARCHAR(50),
-    specialization VARCHAR(50),
-    rating FLOAT
-);
+-- TRAINERS TABLE
+CREATE TABLE trainers (
+    trainer_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    specialization VARCHAR(100),
+    phone VARCHAR(20),
+    salary DECIMAL(10,2)
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS payments (
-    paymentid INT PRIMARY KEY AUTO_INCREMENT,
-    regdno VARCHAR(20),
-    paymentstatus VARCHAR(20)
-);
+-- ATTENDANCE TABLE
+CREATE TABLE attendance (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT,
+    check_in_date DATE,
+    status VARCHAR(20),
+    FOREIGN KEY (member_id) REFERENCES members(regdno) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS logs (
-    logid INT PRIMARY KEY AUTO_INCREMENT,
-    regdno VARCHAR(20),
-    intime DATETIME,
-    outtime DATETIME
-);
+-- PAYMENTS TABLE
+CREATE TABLE payments (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT,
+    amount DECIMAL(10,2),
+    payment_date DATE,
+    method VARCHAR(50),
+    FOREIGN KEY (member_id) REFERENCES members(regdno) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
-DELETE FROM admin;
-INSERT INTO admin(username,password) VALUES ('admin','admin123');
+-- DEFAULT ADMIN ACCOUNT
+INSERT INTO users (username, password) VALUES ('admin', 'admin123');
 
-DELETE FROM items;
-INSERT INTO items(itemname,quantity) VALUES
-('2KG Dumbbells', 24),
-('5KG Dumbbells', 20),
-('10KG Dumbbells', 18),
-('20KG Olympic Barbell', 8),
-('Adjustable Bench Press', 6),
-('Incline Bench', 5),
-('Cable Crossover Machine', 2),
-('Smith Machine', 2),
-('Leg Press Machine', 3),
-('Lat Pulldown Machine', 3),
-('Treadmill Pro X1', 7),
-('Exercise Cycle', 6),
-('Rowing Machine', 4),
-('EZ Curl Rod', 10),
-('Squat Rack', 4);
+-- DEFAULT MEMBERSHIP PLANS
+INSERT INTO membership_plans (membership, amount) VALUES
+('Monthly', 1200.00),
+('Quarterly', 3200.00),
+('Half Yearly', 6000.00),
+('Yearly', 11000.00),
+('Weekly', 500.00);
 
-DELETE FROM trainers;
-INSERT INTO trainers(trainername,specialization,rating) VALUES
-('Arun', 'Strength Training', 4.8),
-('Vijay', 'Cardio Fitness', 4.5),
-('Karthik', 'Weight Loss', 4.7),
-('Neha', 'Yoga Coach', 4.6),
-('Rahul', 'Functional Training', 4.4);
+COMMIT;
